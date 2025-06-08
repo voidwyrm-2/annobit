@@ -41,7 +41,9 @@ const EXTRA_HYPHENS: usize = 2;
 fn proxy_main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = args().collect();
     if args.len() < 2 {
-        return Err(Box::new(AnnobitError::from("expected 'annobit <file>'")));
+        return Err(Box::new(AnnobitError::from(
+            "expected 'annobit <file> [-r]'",
+        )));
     }
 
     let lines: Vec<String> = read_to_string(&args[1])?
@@ -67,7 +69,7 @@ fn proxy_main() -> Result<(), Box<dyn Error>> {
                 pipe += " ";
             }
 
-            pipes += &pipe.clone();
+            pipes += &pipe;
         }
 
         if i > 0 {
@@ -90,8 +92,18 @@ fn proxy_main() -> Result<(), Box<dyn Error>> {
         vert[vert_len - 1] += "-";
     }
 
-    for i in 1..vert.len() - 1 {
-        vert[i + 1] += &(" ".to_owned() + &lines[i]);
+    let rev = args.len() > 2 && args[2] == "-r";
+
+    let mut j = if rev { 1 } else { vert_len - 2 };
+
+    for i in 1..vert_len - 1 {
+        vert[i + 1] += &(" ".to_owned() + &lines[j]);
+
+        if rev {
+            j += 1;
+        } else {
+            j -= 1;
+        }
     }
 
     println!("{}", vert.join("\n"));

@@ -1,0 +1,5 @@
+00 00 00 00
+opcode
+flags
+argument 1
+argument 2
