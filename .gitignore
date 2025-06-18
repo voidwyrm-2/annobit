@@ -5,6 +5,11 @@ zig-out/
 # Rust
 target/
 
+# C#
+
+bin/
+obj/
+
 # Python
 __pycache__/
 
@@ -18,8 +23,5 @@ build/
 test/build/
 compile/
 dist/
-bin/
-obj/
 
-# User added
 *.bin

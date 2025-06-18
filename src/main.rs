@@ -1,10 +1,12 @@
 use std::{
-    env::args,
     error::Error,
     fmt::{Debug, Display},
-    fs::read_to_string,
+    fs::{read_to_string, File},
+    io::Write,
     process::exit,
 };
+
+use clap::Parser;
 
 struct AnnobitError {
     msg: String,
@@ -38,15 +40,8 @@ impl Error for AnnobitError {
 
 const EXTRA_HYPHENS: usize = 2;
 
-fn proxy_main() -> Result<(), Box<dyn Error>> {
-    let args: Vec<String> = args().collect();
-    if args.len() < 2 {
-        return Err(Box::new(AnnobitError::from(
-            "expected 'annobit <file> [-r]'",
-        )));
-    }
-
-    let lines: Vec<String> = read_to_string(&args[1])?
+fn proxy_main(args: Args) -> Result<(), Box<dyn Error>> {
+    let lines: Vec<String> = read_to_string(args.file)?
         .split("\n")
         .map(|s| s.to_string())
         .collect();
@@ -92,27 +87,47 @@ fn proxy_main() -> Result<(), Box<dyn Error>> {
         vert[vert_len - 1] += "-";
     }
 
-    let rev = args.len() > 2 && args[2] == "-r";
-
-    let mut j = if rev { 1 } else { vert_len - 2 };
+    let mut j = if args.reverse { 1 } else { vert_len - 2 };
 
     for i in 1..vert_len - 1 {
         vert[i + 1] += &(" ".to_owned() + &lines[j]);
 
-        if rev {
+        if args.reverse {
             j += 1;
         } else {
             j -= 1;
         }
     }
 
-    println!("{}", vert.join("\n"));
+    let result = vert.join("\n");
+    if args.out != "" {
+        let mut f = File::create(args.out)?;
+        write!(f, "{}", result)?;
+    } else {
+        println!("{}", result);
+    }
 
     Ok(())
 }
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// The path to the file to annotate
+    #[arg(short, long)]
+    file: String,
+
+    /// The path of the output file
+    #[arg(short, long, default_value_t = String::new())]
+    out: String,
+
+    /// Read annotations reversed
+    #[arg(short, long, default_value_t = false)]
+    reverse: bool,
+}
+
 fn main() {
-    if let Err(e) = proxy_main() {
+    if let Err(e) = proxy_main(Args::parse()) {
         println!("{}", e);
         exit(1);
     }
